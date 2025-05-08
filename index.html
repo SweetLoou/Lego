@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pour Marie-Chatte - LEGO Builder</title>
+    <title>Lego Table</title>
     <style>
         /* Intro CSS */
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap');
@@ -180,39 +180,22 @@
         </div>
         <div class="dedication-section">
             <p class="dedication-text">
-                Conçu avec passion, spécialement pour toi, Marie-Chatte.
+                Pour toi, Marie-Pier
             </p>
             <p class="signature-line">
-                <span class="by-sweet-lou">Ton Sweet Lou</span> <span class="heart">❤️</span>
+                <span class="by-sweet-lou">Sweet Lou</span> <span class="heart"></span>
             </p>
         </div>
     </div>
 
     <div id="lego-builder-wrapper" style="display: none;">
+        <video id="gtaVideo" loop muted crossOrigin="anonymous" playsinline style="display:none" src="https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4"></video>
         <div id="ui-container">
-            <div id="info"></div> <!-- Text removed -->
-            <div id="instructions">
-                <b>Contrôles (Mobile):</b><br>
-                - Glisser (1 doigt): Pivoter la vue.<br>
-                - Pincer (2 doigts): Zoomer/Dézoomer.<br>
-                - Glisser (2 doigts): Translater la vue.<br>
-                - <b>Double-Tap:</b> Placer une brique.<br>
-                - Supprimer brique: Clic-droit (Bureau).<br>
-                - Pivoter aperçu: Touche 'R' (Bureau).<br>
-                - Sélectionner une couleur ci-dessous.
-                <hr style="margin: 4px 0;">
-                <b>Contrôles (Bureau):</b><br>
-                - Glisser (gauche): Pivoter.<br>
-                - Molette: Zoomer.<br>
-                - Glisser (droit): Translater.<br>
-                - <b>Double Clic (gauche):</b> Placer.<br>
-                - <b>Clic-droit (brique):</b> Supprimer.<br>
-                - <b>Touche 'R':</b> Pivoter aperçu.
-            </div>
             <div id="color-palette"></div>
             <div class="button-controls">
-                <button id="btn-toggle-glass">Table en Verre</button> <!-- Text changed for consistency -->
-                <button id="btn-clear-all">Tout Effacer</button> <!-- Text changed for consistency -->
+                <button id="btn-toggle-glass">Table de Verre</button>
+                <button id="btn-clear-all">Effacer</button>
+                <button id="btn-rotate-brick">Pivoter</button>
             </div>
         </div>
         <!-- Canvas will be appended to body by JavaScript -->
@@ -282,7 +265,7 @@
 
         // Cached DOM Elements
         let introScreenWrapper, legoBuilderWrapper, launchBuilderButton,
-            colorPaletteContainer, btnToggleGlass, btnClearAll;
+            colorPaletteContainer, btnToggleGlass, btnClearAll, btnRotateBrick;
 
         function cacheDOMElements() {
             introScreenWrapper = document.getElementById('intro-screen-wrapper');
@@ -291,6 +274,7 @@
             colorPaletteContainer = document.getElementById('color-palette');
             btnToggleGlass = document.getElementById('btn-toggle-glass');
             btnClearAll = document.getElementById('btn-clear-all');
+            btnRotateBrick = document.getElementById('btn-rotate-brick');
         }
 
         function showLegoBuilder() {
@@ -407,7 +391,16 @@
             wallDefs.forEach(def => { const w = new THREE.Mesh(new THREE.BoxGeometry(def.w,def.h,def.d), wallMat); w.position.set(def.x,def.y,def.z); w.receiveShadow = true; scene.add(w); });
 
             const tvSW = SCENE_WIDTH_M*0.2, tvSH = tvSW*(9/16), tvD = LEGO_UNIT*0.3, tvY = LEGO_UNIT*12;
-            const tvScreen = new THREE.Mesh(new THREE.BoxGeometry(tvSW,tvSH,tvD*0.3), new THREE.MeshBasicMaterial({color:0x050505}));
+            
+            // Video setup for TV
+            const videoElement = document.getElementById('gtaVideo');
+            videoElement.play().catch(error => console.log("Video play failed - user interaction likely required:", error)); // Attempt to play video
+            const videoTexture = new THREE.VideoTexture(videoElement);
+            videoTexture.minFilter = THREE.LinearFilter;
+            videoTexture.magFilter = THREE.LinearFilter;
+            videoTexture.format = THREE.RGBFormat; // Deprecated, but often needed for VideoTexture. THREE will handle it.
+
+            const tvScreen = new THREE.Mesh(new THREE.BoxGeometry(tvSW,tvSH,tvD*0.3), new THREE.MeshBasicMaterial({map: videoTexture, toneMapped: false}));
             tvScreen.position.set(0,tvY,TV_AREA_Z_OFFSET+tvD/2); scene.add(tvScreen);
             const tvFrame = new THREE.Mesh(new THREE.BoxGeometry(tvSW+LEGO_UNIT*0.1,tvSH+LEGO_UNIT*0.1,tvD), new THREE.MeshStandardMaterial({color:0x1a1a1a,roughness:0.4,metalness:0.2}));
             tvFrame.position.set(0,tvY,TV_AREA_Z_OFFSET+tvD/2-tvD*0.1); scene.add(tvFrame);
@@ -461,6 +454,17 @@
             });
             btnToggleGlass.onclick = (e) => { e.stopPropagation(); toggleGlassTable(); };
             btnClearAll.onclick = (e) => { e.stopPropagation(); clearAllBricks(); };
+            btnRotateBrick.onclick = (e) => {
+                e.stopPropagation();
+                ghostBrickRotationY = (ghostBrickRotationY + Math.PI / 2) % (Math.PI * 2);
+                if (ghostBrick) {
+                    ghostBrick.rotation.y = ghostBrickRotationY;
+                }
+                updateGhostBrickVisuals();
+                if (renderer && renderer.domElement) {
+                     renderer.domElement.focus();
+                }
+            };
         }
 
         function updateGhostBrickVisuals() {
@@ -713,3 +717,4 @@
     </script>
 </body>
 </html>
+
